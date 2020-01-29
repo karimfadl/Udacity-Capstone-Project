@@ -28,4 +28,4 @@ You Can Launch EC2 Instance to Install Jenkins, Add **BlueOcean** Plugin and **K
 
 **Pipeline**
 
-You can see this  pipeline in the PDF Graph called **Pipelines.pdf** in "Screenshots" Directory.
+You can see this  pipeline in the PDF Graph called **Pipelines.png** in "Screenshots" Directory.
