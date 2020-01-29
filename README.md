@@ -28,17 +28,4 @@ You Can Launch EC2 Instance to Install Jenkins, Add **BlueOcean** Plugin and **K
 
 **Pipeline**
 
-You can see this  pipeline in the image called **Pipelines plan.png** in the "Pipeline 2". You can see the **Jenkinsfile** in the folder **deploy-containers-pipeline**.
-
-**Result**
-Then, in there you use the **tidy** to **lint the HTML**. Please look at the image: lint.png
-
-Then, we use **docker cli** to build the image and push it. Please look at the images: build-image.png push-image.png docker-image-repository.png
-
-
-In there you use the **kubectl** to deploy the image to the cluster in the blue and green pod and create a **service** that redirects traffic to the blue pod. Please look at the images: deploy-blue-container.png deploy-green-container.png service-redirect-blue.png
-
-Then, the **service** is updated to redirect traffic to the green pod. Please look at the image: service-redirect-green.png
-
-Then, the website can be access using the URL of the service and the port. Please look at the images: website.png service-pods.png
-
+You can see this  pipeline in the PDF Graph called **Pipelines.pdf** in "Screenshots" Directory.

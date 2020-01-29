@@ -1,5 +1,10 @@
 pipeline {
 	agent any
+
+   	environment {
+        DOCKER_IMAGE_NAME = "karimfadl/udacity-capstone"
+	}
+
 	stages {
 
 		stage('Lint HTML') {
@@ -9,64 +14,59 @@ pipeline {
 		}
 		
 		stage('Build Docker Image') {
-			steps {
-				withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD']]){
-					sh '''
-						docker build -t karimfadl/cloudcapstonev2 .
-					'''
-				}
-			}
+            		steps {
+                		script {
+                    			app = docker.build(DOCKER_IMAGE_NAME)
+                    			app.inside {
+                        			sh 'echo Hello, Nginx!'
+                    			}
+                		}
+            		}
+
 		}
 
-		stage('Push Image To Dockerhub') {
-			steps {
-				withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD']]){
-					sh '''
-						docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-						docker push karimfadl/cloudcapstonev2
-					'''
-				}
-			}
-		}
+       		 stage('Push Docker Image') {
+            		steps {
+                		script {
+                    			docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_login') {
+                        		app.push("${env.BUILD_NUMBER}")
+                        		app.push("latest")
+                    			}
+                		}
+            		}
+        	}
 
-		stage('Set current kubectl context') {
-			steps {
-				withAWS(region:'us-east-2', credentials:'aws-static') {
-					sh '''
-						kubectl config use-context arn:aws:eks:us-east-2:546547842218:cluster/capstonecluster
-					'''
-				}
-			}
-		}
 
-		stage('Deploy blue container') {
-			steps {
-				withAWS(region:'us-east-2', credentials:'aws-static') {
-					sh '''
-						kubectl apply -f ./blue-controller.json
-					'''
-				}
-			}
-		}
+        	stage('Deploy blue container') {
+            		steps {
+                		kubernetesDeploy(
+                    			kubeconfigId: 'kubeconfig',
+                    			configs: 'blue-controller.yaml',
+                    			enableConfigSubstitution: true
+                		)
+            		}
+        	}
 
-		stage('Deploy green container') {
-			steps {
-				withAWS(region:'us-east-2', credentials:'aws-static') {
-					sh '''
-						kubectl apply -f ./green-controller.json
-					'''
-				}
-			}
-		}
+
+                stage('Deploy green container') {
+                        steps {
+                                kubernetesDeploy(
+                                        kubeconfigId: 'kubeconfig',
+                                        configs: 'green-controller.yaml',
+                                        enableConfigSubstitution: true
+                                )
+                        }
+                }
+
 
 		stage('Create the service in the cluster, redirect to blue') {
-			steps {
-				withAWS(region:'us-east-2', credentials:'aws-static') {
-					sh '''
-						kubectl apply -f ./blue-service.json
-					'''
-				}
-			}
+                        steps {
+                                kubernetesDeploy(
+                                        kubeconfigId: 'kubeconfig',
+                                        configs: 'blue-service.yaml',
+                                        enableConfigSubstitution: true
+                                )
+                        }
 		}
 
 		stage('Wait user approve') {
@@ -75,15 +75,15 @@ pipeline {
             }
         }
 
-		stage('Create the service in the cluster, redirect to green') {
-			steps {
-				withAWS(region:'us-east-2', credentials:'aws-static') {
-					sh '''
-						kubectl apply -f ./green-service.json
-					'''
-				}
-			}
-		}
+                stage('Create the service in the cluster, redirect to green') {
+                        steps {
+                                kubernetesDeploy(
+                                        kubeconfigId: 'kubeconfig',
+                                        configs: 'green-service.yaml',
+                                        enableConfigSubstitution: true
+                                )
+                        }
+                }
 
 	}
 }
